@@ -2,7 +2,7 @@ SEED: 100
 DATASET: 'freesolv' # freesolv / esol / scgas
 
 BATCH_SIZE: 32
-MAX_EPOCHS: 2
+MAX_EPOCHS: 300
 K: 5
 
 R_HOME: 'C:\R-4.4.2'

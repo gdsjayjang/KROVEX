@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 
-# from rdkit import Chem
-# from rdkit.Chem import Descriptors
-
 def FeatureNormalization(mol_graphs, feat_name):
     features = [getattr(g, feat_name) for g in mol_graphs]
     features_mean = np.mean(features)
