@@ -26,9 +26,7 @@
 ## Run the main code
 - To run the main code: `python main.py`
 
-- To run the ablation code: `python main_ablation.py`
-
-- To run a code on only a few batches, epochs, and folds, you can change them in: `.\configs\config.yaml`
+- To run the code on only a few batches, epochs, and folds, you can change them in: `.\configs\config.yaml`
 
 ## Use KROVEX on a new dataset
 To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `\descriptor_selection` folder.
@@ -40,7 +38,7 @@ To implement a new dataset, you need to select descriptors through a `Descriptor
 
     - Download `R`
 
-    - Check your version of R: `r --version`. The results should be same version of R you downloaded.
+    - Check your version of R: `r --version`. The results should be the same version of R you downloaded.
 
     - Specifiy R path in `.\configs\config.yaml`
 
