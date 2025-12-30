@@ -1,18 +1,51 @@
 import numpy as np
 import pandas as pd
+import random
 import torch
 import rdkit.Chem.Descriptors as dsc
 
 from utils.utils import FeatureNormalization
 from utils.mol_graph import smiles_to_mol_graph
 
+from rdkit import Chem
+from rdkit.Chem.Scaffolds import MurckoScaffold
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+def get_scaffold_groups(smiles_list):
+    scaffold_dict = {}
+
+    for idx, s in enumerate(smiles_list):
+        scaffold = MurckoScaffold.MurckoScaffoldSmilesFromSmiles(s)
+
+        if scaffold not in scaffold_dict:
+            scaffold_dict[scaffold] = []
+
+        scaffold_dict[scaffold].append(idx)
+
+    return scaffold_dict
+
+def scaffold_kfold_split(samples, K=5):
+    scaffold_groups = get_scaffold_groups(samples)
+    print('scaffold_groups:', scaffold_groups)
+
+    groups = list(scaffold_groups.values())
+
+    random.shuffle(groups)
+
+    folds = [[] for _ in range(K)]
+
+    for i, group in enumerate(groups):
+        folds[i % K].extend(group)
+
+    return folds
 
 def read_dataset(file_name):
     samples = []
     mol_graphs = []
     data_mat = np.array(pd.read_csv(file_name))
     smiles = data_mat[:, 0]
+    smiles_list = []
 
     target = np.array(data_mat[:, 1:3], dtype=float)
 
@@ -26,11 +59,12 @@ def read_dataset(file_name):
 
             samples.append((mol_graph, target[i]))
             mol_graphs.append(mol_graph)
+            smiles_list.append(smiles[i])
 
     for feat in ['num_atoms', 'weight', 'num_rings']:
         FeatureNormalization(mol_graphs, feat)
 
-    return samples
+    return samples, smiles_list
 
 
 # freesolv
@@ -40,6 +74,7 @@ def read_dataset_freesolv(file_name):
     data_mat = np.array(pd.read_csv(file_name))
     smiles = data_mat[:, 0]
     target = np.array(data_mat[:, 1:3], dtype=float)
+    smiles_list = []
 
     for i in range(0, data_mat.shape[0]):
         mol, mol_graph = smiles_to_mol_graph(smiles[i])
@@ -108,6 +143,7 @@ def read_dataset_freesolv(file_name):
 
             samples.append((mol_graph, target[i]))
             mol_graphs.append(mol_graph)
+            smiles_list.append(smiles[i])
 
     for feat in ['NHOHCount', 'SlogP_VSA2', 'SlogP_VSA10', 'NumAromaticRings', 'MaxEStateIndex', 
                 'PEOE_VSA14', 'fr_Ar_NH', 'SMR_VSA3', 'SMR_VSA7', 'SlogP_VSA5', 
@@ -121,7 +157,7 @@ def read_dataset_freesolv(file_name):
                 'SlogP_VSA8', 'VSA_EState4', 'SMR_VSA5', 'FpDensityMorgan3', 'FractionCSP3']:
         FeatureNormalization(mol_graphs, feat)
 
-    return samples
+    return samples, smiles_list
 
 
 # esol
@@ -131,6 +167,7 @@ def read_dataset_esol(file_name):
     data_mat = np.array(pd.read_csv(file_name))
     smiles = data_mat[:, 0]
     target = np.array(data_mat[:, 1:3], dtype=float)
+    smiles_list = []
 
     for i in range(0, data_mat.shape[0]):
         mol, mol_graph = smiles_to_mol_graph(smiles[i])
@@ -215,6 +252,7 @@ def read_dataset_esol(file_name):
 
             samples.append((mol_graph, target[i]))
             mol_graphs.append(mol_graph)
+            smiles_list.append(smiles[i])
 
     for feat in ['MolLogP', 'MaxAbsPartialCharge', 'MaxEStateIndex', 'SMR_VSA10', 'Kappa2', 
                 'BCUT2D_MWLOW', 'PEOE_VSA13', 'MinAbsPartialCharge', 'BCUT2D_CHGHI', 'PEOE_VSA6', 
@@ -231,7 +269,7 @@ def read_dataset_esol(file_name):
                 'fr_term_acetylene', 'SMR_VSA2', 'fr_lactone']:
         FeatureNormalization(mol_graphs, feat)
 
-    return samples
+    return samples, smiles_list
 
 
 # Self-Curated Gas
@@ -241,6 +279,7 @@ def read_dataset_scgas(file_name):
     data_mat = np.array(pd.read_csv(file_name))
     smiles = data_mat[:, 0]
     target = np.array(data_mat[:, 1:3], dtype=float)
+    smiles_list = []
 
     for i in range(0, data_mat.shape[0]):
         mol, mol_graph = smiles_to_mol_graph(smiles[i])
@@ -277,6 +316,7 @@ def read_dataset_scgas(file_name):
 
             samples.append((mol_graph, target[i]))
             mol_graphs.append(mol_graph)
+            smiles_list.append(smiles[i])
 
     for feat in ['MolMR', 'TPSA', 'fr_halogen', 'SlogP_VSA12', 'RingCount', 
                 'Kappa1', 'NumHAcceptors', 'NumHDonors', 'SMR_VSA7', 'SMR_VSA5',
@@ -285,7 +325,7 @@ def read_dataset_scgas(file_name):
                 'SlogP_VSA5', 'VSA_EState7', 'NOCount']:
         FeatureNormalization(mol_graphs, feat)
 
-    return samples
+    return samples, smiles_list
 
 
 # Solubility
@@ -295,6 +335,7 @@ def read_dataset_solubility(file_name):
     data_mat = np.array(pd.read_csv(file_name))
     smiles = data_mat[:, 0]
     target = np.array(data_mat[:, 1:3], dtype=float)
+    smiles_list = []
 
     for i in range(0, data_mat.shape[0]):
         mol, mol_graph = smiles_to_mol_graph(smiles[i])
@@ -339,6 +380,7 @@ def read_dataset_solubility(file_name):
 
             samples.append((mol_graph, target[i]))
             mol_graphs.append(mol_graph)
+            smiles_list.append(smiles[i])
 
     for feat in ['Chi1v', 'Chi1', 'SlogP_VSA2', 'HallKierAlpha', 'PEOE_VSA6',
        'fr_benzene', 'BertzCT', 'VSA_EState6', 'SMR_VSA7', 'Chi3n',
@@ -349,4 +391,4 @@ def read_dataset_solubility(file_name):
        'NHOHCount', 'SlogP_VSA6']:
         FeatureNormalization(mol_graphs, feat)
 
-    return samples
+    return samples, smiles_list

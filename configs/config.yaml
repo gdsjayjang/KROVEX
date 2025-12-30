@@ -1,5 +1,9 @@
 SEED: 100
-DATASET: 'freesolv' # freesolv / esol / scgas
+
+BACKBONE: 'GCN' # ['GCN', 'GAT', 'GIN']
+SPLIT: 'random' # ['random', 'scaffold']
+
+DATASET: 'freesolv' # ['freesolv', 'esol', 'scgas', 'solubility']
 
 BATCH_SIZE: 32
 MAX_EPOCHS: 300

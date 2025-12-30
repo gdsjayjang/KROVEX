@@ -7,8 +7,7 @@ from utils import trainer
 from utils import mol_collate
 from utils.mol_props import dim_atomic_feat
 
-from model import CONCAT_DS, KROVEX
-from configs.config import SET_SEED, DATASET_NAME, DATASET_PATH, BATCH_SIZE, MAX_EPOCHS, K
+from configs.config import SET_SEED, DATASET_NAME, DATASET_PATH, BATCH_SIZE, MAX_EPOCHS, K, SEED
 
 def main():
     SET_SEED()
@@ -39,17 +38,41 @@ def main():
         num_descriptors = 23
         descriptors = mol_collate.descriptor_selection_scgas
 
+    elif DATASET_NAME == 'solubility':
+        print('DATASET_NAME: ', DATASET_NAME)
+        BATCH_SIZE = 256
+        dataset = mc.read_dataset_solubility(DATASET_PATH + '.csv')
+        num_descriptors = 30
+        descriptors = mol_collate.descriptor_selection_solubility
+
     random.shuffle(dataset)
 
-    # concatenation + descriptor selection
-    model_concat_3 = CONCAT_DS.concat_Net_3(dim_atomic_feat, 1, 3).to(device)
-    model_concat_5 = CONCAT_DS.concat_Net_5(dim_atomic_feat, 1, 5).to(device)
-    model_concat_7 = CONCAT_DS.concat_Net_7(dim_atomic_feat, 1, 7).to(device)
-    model_concat_10 = CONCAT_DS.concat_Net_10(dim_atomic_feat, 1, 10).to(device)
-    model_concat_20 = CONCAT_DS.concat_Net_20(dim_atomic_feat, 1, 20).to(device)
-    model_concat_ds = CONCAT_DS.concat_Net(dim_atomic_feat, 1, num_descriptors).to(device)
+    
+    # GCN
+    from model import GCN
+    from utils import mol_collate_vanilla
+    dataset_backbone = mc.read_dataset(DATASET_PATH + '.csv')
+    random.shuffle(dataset_backbone)
 
-    # kronecker-product + descriptor selection
+    model_backbone = GCN.Net(dim_atomic_feat, 1).to(device)
+
+    # EGCN
+    from model import EGCN
+    model_backbone_R = EGCN.Net(dim_atomic_feat, 1, 1).to(device)
+    model_backbone_S = EGCN.Net(dim_atomic_feat, 1, 2).to(device)
+    model_backbone_E = EGCN.Net(dim_atomic_feat, 1, 3).to(device)
+
+    # GCN + concatenation + descriptor selection
+    from model import EGCN_DS
+    model_concat_3 = EGCN_DS.concat_Net_3(dim_atomic_feat, 1, 3).to(device)
+    model_concat_5 = EGCN_DS.concat_Net_5(dim_atomic_feat, 1, 5).to(device)
+    model_concat_7 = EGCN_DS.concat_Net_7(dim_atomic_feat, 1, 7).to(device)
+    model_concat_10 = EGCN_DS.concat_Net_10(dim_atomic_feat, 1, 10).to(device)
+    model_concat_20 = EGCN_DS.concat_Net_20(dim_atomic_feat, 1, 20).to(device)
+    model_concat_ds = EGCN_DS.concat_Net(dim_atomic_feat, 1, num_descriptors).to(device)
+
+    # GCN + kronecker-product + descriptor selection
+    from model import KROVEX
     model_kronecker_3 = KROVEX.kronecker_Net_3(dim_atomic_feat, 1, 3).to(device)
     model_kronecker_5 = KROVEX.kronecker_Net_5(dim_atomic_feat, 1, 5).to(device)
     model_kronecker_7 = KROVEX.kronecker_Net_7(dim_atomic_feat, 1, 7).to(device)
@@ -62,7 +85,25 @@ def main():
     # criterion = nn.MSELoss(reduction='sum')
 
     test_losses = dict()
-    
+
+    #------------------------ Backbone ------------------------#
+    print('--------- Vanilla Backbone ---------')
+    test_losses['Backbone'] = trainer.cross_validation(dataset_backbone, model_backbone, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_gcn, trainer.test_gcn, mol_collate_vanilla.collate_gcn)
+    print('test loss (Backbone): ' + str(test_losses['Backbone']))
+
+    print('--------- Backbone with predefined descriptor Ring ---------')
+    test_losses['Backbone_R'] = trainer.cross_validation(dataset_backbone, model_backbone_R, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, mol_collate_vanilla.collate_egcn_ring)
+    print('test loss (Backbone_R): ' + str(test_losses['Backbone_R']))
+
+    print('--------- Backbone with predefined descriptor Scale ---------')
+    test_losses['Backbone_S'] = trainer.cross_validation(dataset_backbone, model_backbone_S, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, mol_collate_vanilla.collate_egcn_scale)
+    print('test loss (Backbone_S): ' + str(test_losses['Backbone_S']))
+
+    print('--------- Backbone with predefined descriptors ---------')
+    test_losses['Backbone_E'] = trainer.cross_validation(dataset_backbone, model_backbone_E, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, mol_collate_vanilla.collate_egcn)
+    print('test loss (Backbone_E): ' + str(test_losses['Backbone_E']))
+
+
     # ------------------------ concatenation + descriptor selection ------------------------#
     print('--------- concatenation with 3 descriptors ---------')
     test_losses['concat_3'] = trainer.cross_validation(dataset, model_concat_3, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, mcol.descriptor_selection_3)
@@ -114,7 +155,7 @@ def main():
     print('test loss (KROVEX): ' + str(test_losses['KROVEX']))
 
     print('test_losse:', test_losses)
-    print(DATASET_NAME)
+    print(f'{DATASET_NAME}, {criterion}, BATCH_SIZE:{BATCH_SIZE}, SEED:{SEED}')
 
 if __name__ == '__main__':
     main()
