@@ -29,7 +29,7 @@
 - To run the code on only a few batches, epochs, and folds, you can change them in: `.\configs\config.yaml`
 
 ## Use KROVEX on a new dataset
-To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `\descriptor_selection` folder.
+- To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `\descriptor_selection` folder.
 
 ## Descriptor Selection
 - To run the code `main_descriptor_selection.py`, you may need some preparation:
@@ -48,4 +48,14 @@ To implement a new dataset, you need to select descriptors through a `Descriptor
 
 - To incoporate descriptors into the model, check `utils\mol_collate.py` and `utils\mol_conv.py` for details.
 
-
+## Citation
+- If this code has been helpful in your research, we would really appreciate it if you cite the following paper.
+```
+@article{jang2026multimodal,
+  title={Multimodal graph fusion with statistically guided parsimonious descriptor selection for molecular property prediction},
+  author={Jang, Yoonsuk and Lee, Juyeon and Jeong, Keunhong and Kim, Jaeoh},
+  journal={Journal of Cheminformatics},
+  year={2026},
+  publisher={Springer}
+}
+```
