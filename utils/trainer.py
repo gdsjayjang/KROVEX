@@ -4,25 +4,6 @@ import numpy as np
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-def train_gcn(model, criterion, optimizer, train_data_loader, max_epochs):
-    model.train()
-
-    for epoch in range(0, max_epochs):
-        train_loss = 0
-
-        for bg, target in train_data_loader:
-            pred = model(bg)
-            loss = criterion(pred, target)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.detach().item()
-
-        train_loss /= len(train_data_loader.dataset)
-
-        print('Epoch {}, train loss {:.4f}'.format(epoch + 1, train_loss))
-
-
 def train_model(model, criterion, optimizer, train_data_loader, max_epochs):
     model.train()
 
@@ -40,30 +21,6 @@ def train_model(model, criterion, optimizer, train_data_loader, max_epochs):
         train_loss /= len(train_data_loader.dataset)
 
         print('Epoch {}, train loss {:.4f}'.format(epoch + 1, train_loss))
-
-
-def test_gcn(model, criterion, test_data_loader, accs=None):
-    preds = None
-    model.eval()
-
-    with torch.no_grad():
-        test_loss = 0
-
-        for bg, target in test_data_loader:
-            pred = model(bg)
-            loss = criterion(pred, target)
-            test_loss += loss.detach().item()
-
-            if preds is None:
-                preds = pred.clone().detach()
-            else:
-                preds = torch.cat((preds, pred), dim=0)
-
-        test_loss /= len(test_data_loader.dataset)
-
-        print('Test loss: ' + str(test_loss))
-
-    return test_loss, preds
 
 
 def test_model(model, criterion, test_data_loader, accs=None):

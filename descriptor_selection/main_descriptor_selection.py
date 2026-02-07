@@ -14,17 +14,14 @@ target = df.iloc[:,-1]
 print('Processing descriptor selection...')
 extractor = MolecularFeatureExtractor()
 df_all_features = extractor.extract_molecular_features(smiles_list)
-
 df_all_features['target'] = target
 
 
 num_all_features = df_all_features.shape[1] - 1 
 df_all_features[df_all_features.isna().any(axis = 1)]
 df_removed_features = df_all_features.dropna()
-num_removed_features = df_removed_features.shape[1] - 1
 unique_columns = list(df_removed_features.loc[:, df_removed_features.nunique() == 1].columns)
 df_removed_features = df_removed_features.drop(columns = unique_columns).copy()
-num_removed_features = df_removed_features.shape[1] - 1
 low_variances = sorted(df_removed_features.var())
 columns_low_variances = []
 for i in low_variances:
@@ -34,7 +31,6 @@ for i in low_variances:
 columns_low_variances = [item for index in columns_low_variances for item in index]
 columns_low_variances = list(set(columns_low_variances))
 df_removed_features = df_removed_features.drop(columns = columns_low_variances).copy()
-num_removed_features = df_removed_features.shape[1] - 1
 
 
 # ISIS

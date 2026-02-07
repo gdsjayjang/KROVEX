@@ -3,7 +3,7 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 
 """
-descriptor extiontor
+descriptor extractor
 """
 class MolecularFeatureExtractor:
     def __init__(self):

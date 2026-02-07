@@ -46,7 +46,7 @@
 
     `python .\descriptor_selection\main_descriptor_selection.py`
 
-- To incoporate descriptors into the model, check `utils\mol_collate.py` and `utils\mol_conv.py` for details.
+- To incoporate descriptors into the model, check `.\utils\mol_collate.py` and `.\utils\mol_conv.py` for details.
 
 ## Citation
 - If this code has been helpful in your research, we would really appreciate it if you cite the following paper.

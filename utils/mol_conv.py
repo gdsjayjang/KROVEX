@@ -8,31 +8,6 @@ from utils.mol_graph import smiles_to_mol_graph
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def read_dataset(file_name):
-    samples = []
-    mol_graphs = []
-    data_mat = np.array(pd.read_csv(file_name))
-    smiles = data_mat[:, 0]
-
-    target = np.array(data_mat[:, 1:3], dtype=float)
-
-    for i in range(0, data_mat.shape[0]):
-        mol, mol_graph = smiles_to_mol_graph(smiles[i])
-
-        if mol is not None and mol_graph is not None:
-            mol_graph.num_atoms = mol.GetNumAtoms()
-            mol_graph.weight = dsc.ExactMolWt(mol)
-            mol_graph.num_rings = mol.GetRingInfo().NumRings()
-
-            samples.append((mol_graph, target[i]))
-            mol_graphs.append(mol_graph)
-
-    for feat in ['num_atoms', 'weight', 'num_rings']:
-        FeatureNormalization(mol_graphs, feat)
-
-    return samples
-
-
 # freesolv
 def read_dataset_freesolv(file_name):
     samples = []
