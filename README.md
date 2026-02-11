@@ -1,5 +1,7 @@
 # KROVEX: Multimodal Graph Fusion with Statistically Guided Parsimonious Descriptor Selection for Molecular Property Prediction
 
+<div align="center"><img src="./fig.png"></div>
+
 ## Environment installiation
 - This code was tested with Pytorch 2.1.0, cuda 12.1, torchvision 0.16.0
 - Download ananconda/miniconda if needed
@@ -49,7 +51,7 @@
 - To incoporate descriptors into the model, check `.\utils\mol_collate.py` and `.\utils\mol_conv.py` for details.
 
 ## Citation
-- If this code has been helpful in your research, we would really appreciate it if you cite the following paper.
+- If you find our work helpful for your research, we would really appreciate it if you cite the following paper.
 ```
 @article{jang2026multimodal,
   title={Multimodal graph fusion with statistically guided parsimonious descriptor selection for molecular property prediction},
