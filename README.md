@@ -2,7 +2,7 @@
 
 <div align="center"><img src="./fig.png"></div>
 
-## Environment installiation
+## Environment installation
 - This code was tested with Pytorch 2.1.0, cuda 12.1, torchvision 0.16.0
 - Download ananconda/miniconda if needed
 - Create an environment:
