@@ -5,7 +5,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description='MODEL: KROVEX')
     
     parser.add_argument('--config', default='./configs/config.yaml')
-    parser.add_argument('--r-home', default='C:/Programming/R/R-4.4.2', type=str) # Specify your path of 'R'
+    parser.add_argument('--r-home', default='C:/R-4.4.2', type=str) # Specify your path of 'R'
     parser.add_argument('--dataset-path', default='./datasets/', type=str)
     parser.add_argument('--phase', default='test', choices=['train', 'test'], type=str)
     parser.add_argument('--save-model', action='store_true')

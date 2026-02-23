@@ -28,10 +28,8 @@
 ## Run the main code
 - To run the main code: `python main.py`
 
-- To run the code on only a few batches, epochs, and folds, you can change them in: `.\configs\config.yaml`
-
 ## Use KROVEX on a new dataset
-- To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `\descriptor_selection` folder.
+- To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `descriptor_selection` folder.
 
 ## Descriptor Selection
 - To run the code `main_descriptor_selection.py`, you may need some preparation:
@@ -42,7 +40,7 @@
 
     - Check your version of R: `r --version`. The results should be the same version of R you downloaded.
 
-    - Specifiy R path in `.\configs\config.yaml`
+    - Specify R path: Update the parser argument `--r-home` in `.\configs\args.py`.
 
 - Run the code for descriptor selection:
 
