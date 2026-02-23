@@ -5,16 +5,18 @@ from rpy2.robjects import r
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.robjects import FloatVector
-
-from configs.config import SEED
 r('options(warn=-1)')  
 
+from configs.args import get_parser
+
+parser = get_parser()
+args = parser.parse_args()
 """
 hyperparams
 """
 nfolds = FloatVector([10])[0]
 nsis = FloatVector([30])[0]
-seed = FloatVector([SEED])[0]
+seed = FloatVector([args.seed])[0]
 
 family: str = 'gaussian' # gaussian / binomial / poisson / cox
 tune: str = 'cv' # bic / ebic / aic / cv

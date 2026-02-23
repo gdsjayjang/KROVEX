@@ -25,7 +25,6 @@ extractor = MolecularFeatureExtractor()
 df_all_features = extractor.extract_molecular_features(smiles_list)
 df_all_features['target'] = target
 
-num_all_features = df_all_features.shape[1] - 1 
 df_all_features[df_all_features.isna().any(axis = 1)]
 df_removed_features = df_all_features.dropna()
 unique_columns = list(df_removed_features.loc[:, df_removed_features.nunique() == 1].columns)

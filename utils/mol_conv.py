@@ -8,7 +8,7 @@ from utils.mol_graph import smiles_to_mol_graph
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# freesolv
+# Freesolv
 def read_dataset_freesolv(file_name):
     samples = []
     mol_graphs = []
@@ -99,7 +99,7 @@ def read_dataset_freesolv(file_name):
     return samples
 
 
-# esol
+# ESOL
 def read_dataset_esol(file_name):
     samples = []
     mol_graphs = []

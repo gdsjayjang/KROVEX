@@ -34,13 +34,15 @@ class GCNLayer(nn.Module):
         return g.ndata.pop('h')
 
 class Net(nn.Module):
-    def __init__(self, dim_in, dim_out, dim_self_feat):
+    def __init__(self, num_desc, dim_in, dim_out=1):
         super(Net, self).__init__()
+        self.dim_in = dim_in
+        self.dim_out = dim_out
 
         self.gc1 = GCNLayer(dim_in, 100)
         self.gc2 = GCNLayer(100, 20)
 
-        self.fc1 = nn.Linear(20 * dim_self_feat, 128)
+        self.fc1 = nn.Linear(20 * num_desc, 128)
         self.fc2 = nn.Linear(128, 32)
         self.fc3 = nn.Linear(32, dim_out)
 
@@ -48,7 +50,7 @@ class Net(nn.Module):
         self.bn2 = nn.BatchNorm1d(32)
         self.dropout = nn.Dropout(0.3)
 
-    def forward(self, g, self_feat):
+    def forward(self, g, desc):
         h = F.relu(self.gc1(g, g.ndata['feat']))
         h = F.relu(self.gc2(g, h))
         g.ndata['h'] = h
@@ -56,8 +58,8 @@ class Net(nn.Module):
         hg = dgl.mean_nodes(g, 'h')
 
         hg = hg.unsqueeze(2)
-        self_feat = self_feat.unsqueeze(1)
-        hg = torch.bmm(hg, self_feat)
+        desc = desc.unsqueeze(1)
+        hg = torch.bmm(hg, desc)
         hg = hg.view(hg.size(0), -1)
 
         # MLP

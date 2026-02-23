@@ -30,7 +30,7 @@
 
     `python main.py dataset freesolv --phase train`
 
-- To test the model using saved model (Note: You should first save the model using the parser **--save-model**):
+- To test the model using saved model (Note: You should first train the model using the parser **--save-model**):
 
     `python main.py dataset freesolv --phase test`
 

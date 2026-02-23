@@ -52,7 +52,7 @@ def main():
 
     # DEFINE THE MODEL
     from model import KROVEX
-    KROVEX = KROVEX.Net(dim_atomic_feat, 1, num_desc).to(device)
+    KROVEX = KROVEX.Net(num_desc, dim_atomic_feat).to(device)
 
     # LOSS FUNC
     criterion = select_loss(args.loss)

@@ -94,7 +94,6 @@ def evaluation(train_dataset, test_dataset, model, criterion, batch_size, max_ep
         batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     if phase=='train':
-        # train
         opt = optim.Adam(m.parameters(), lr=lr, weight_decay=weight_decay)
         train(m, criterion, opt, train_loader, max_epochs, dataset_name, save_model)
         test_loss = test(m, criterion, test_loader, dataset_name, mode=False)
