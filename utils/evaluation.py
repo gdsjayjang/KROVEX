@@ -1,0 +1,111 @@
+import copy
+import torch
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from collections import OrderedDict
+
+from torch.utils.data import DataLoader
+import torch.optim as optim
+
+def train(model, criterion, optimizer, train_loader, max_epochs, dataset_name, save_model):
+    for epoch in range(max_epochs):
+        train_loss_sum = 0.0
+        train_n = 0
+
+        model.train()
+        for bg, feat_2d, target, _ in train_loader:
+            pred = model(bg, feat_2d)
+
+            loss = criterion(pred, target)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            bs = target.size(0)
+            train_loss_sum += loss.detach().item() * bs
+            train_n += bs
+        train_loss = train_loss_sum / train_n
+
+        print(f'[TRAIN] Epoch {epoch+1} | loss {train_loss:.4f}')
+
+        # Save model
+        if save_model:
+            if (epoch + 1) == max_epochs:
+                ckpt_dir = Path(f'./checkpoints/{dataset_name}')
+                ckpt_dir.mkdir(parents=True, exist_ok=True)
+                save_path = ckpt_dir / f'model_{dataset_name}_{max_epochs}.pt'
+
+                state_dict = model.state_dict()
+                weights = OrderedDict([[k.split('module.')[-1], v.cpu()] for k, v in state_dict.items()])
+
+                torch.save(weights, save_path)
+                print(f"{dataset_name} Model saved for {max_epochs}")
+
+
+def test(model, criterion, test_loader, dataset_name, mode=False):
+    model.eval()
+    loss_sum = 0.0
+    test_n = 0
+
+    preds, targets = [], []
+    smiles_all = []
+
+    with torch.no_grad():
+        for bg, feat_2d, target, smiles in test_loader:
+            pred = model(bg, feat_2d)
+
+            loss = criterion(pred, target)
+
+            bs = target.size(0)
+            loss_sum += loss.detach().item() * bs
+            test_n += bs
+
+            preds.append(pred.detach().cpu())
+            targets.append(target.detach().cpu())
+            smiles_all.extend(smiles)
+
+    test_loss = loss_sum / test_n
+
+    print(f'[TEST] loss {test_loss:.4f}')
+
+    targets_np = torch.cat(targets, dim=0).cpu().numpy().reshape(-1)
+    preds_np = torch.cat(preds, dim=0).cpu().numpy().reshape(-1)
+
+    if mode:
+        df = pd.DataFrame({
+            'smiles': smiles_all,
+            'target': targets_np,
+            'pred': preds_np
+        })
+        df.to_csv(rf'./results/{dataset_name}.csv', index=False)
+
+    return test_loss
+
+
+def evaluation(train_dataset, test_dataset, model, criterion, batch_size, max_epochs, collate_fn, dataset_name, phase, save_model, ckpt_path, lr=1e-3, weight_decay=0.01):
+    m = copy.deepcopy(model)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+
+    if phase=='train':
+        # train
+        opt = optim.Adam(m.parameters(), lr=lr, weight_decay=weight_decay)
+        train(m, criterion, opt, train_loader, max_epochs, dataset_name, save_model)
+        test_loss = test(m, criterion, test_loader, dataset_name, mode=False)
+
+        return test_loss
+    
+    elif phase=='test':
+        weights = torch.load(ckpt_path)
+        m.load_state_dict(weights, strict=True)
+        print(f"[LOAD] Loaded weights from: {ckpt_path}")
+        
+        test_loss = test(m, criterion, test_loader, dataset_name, mode=True)
+    
+        return test_loss

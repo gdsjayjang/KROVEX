@@ -5,10 +5,10 @@ import dgl
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
 # Freesolv
 def descriptor_selection_freesolv(samples):
     self_feats = np.empty((len(samples), 50), dtype=np.float32)
+    smiles_list=[]
 
     for i in range(0, len(samples)):
         mol_graph = samples[i][0]
@@ -74,15 +74,22 @@ def descriptor_selection_freesolv(samples):
         self_feats[i, 48] = mol_graph.FpDensityMorgan3
         self_feats[i, 49] = mol_graph.FractionCSP3
 
+        smiles_list.append(mol_graph.smiles)
+
     graphs, labels = map(list, zip(*samples))
     batched_graph = dgl.batch(graphs)
 
-    return batched_graph, torch.tensor(self_feats).to(device), torch.tensor(labels, dtype=torch.float32).to(device)
+    return (
+        batched_graph, 
+        torch.tensor(self_feats).to(device), 
+        torch.tensor(labels, dtype=torch.float32).to(device),
+        smiles_list)
 
 
 # ESOL
 def descriptor_selection_esol(samples):
     self_feats = np.empty((len(samples), 63), dtype=np.float32)
+    smiles_list=[]
 
     for i in range(0, len(samples)):
         mol_graph = samples[i][0]
@@ -164,15 +171,22 @@ def descriptor_selection_esol(samples):
         self_feats[i, 61] = mol_graph.SMR_VSA2
         self_feats[i, 62] = mol_graph.fr_lactone
 
+        smiles_list.append(mol_graph.smiles)
+
     graphs, labels = map(list, zip(*samples))
     batched_graph = dgl.batch(graphs)
 
-    return batched_graph, torch.tensor(self_feats).to(device), torch.tensor(labels, dtype=torch.float32).to(device)
+    return (
+        batched_graph, 
+        torch.tensor(self_feats).to(device), 
+        torch.tensor(labels, dtype=torch.float32).to(device),
+        smiles_list)
 
 
-# Self-Curated Gas
-def descriptor_selection_scgas(samples):
+# Vapor Pressure
+def descriptor_selection_vp(samples):
     self_feats = np.empty((len(samples), 23), dtype=np.float32)
+    smiles_list=[]
 
     for i in range(0, len(samples)):
         mol_graph = samples[i][0]
@@ -206,15 +220,22 @@ def descriptor_selection_scgas(samples):
         self_feats[i, 21] = mol_graph.VSA_EState7
         self_feats[i, 22] = mol_graph.NOCount
 
+        smiles_list.append(mol_graph.smiles)
+
     graphs, labels = map(list, zip(*samples))
     batched_graph = dgl.batch(graphs)
 
-    return batched_graph, torch.tensor(self_feats).to(device), torch.tensor(labels, dtype=torch.float32).to(device)
+    return (
+        batched_graph, 
+        torch.tensor(self_feats).to(device), 
+        torch.tensor(labels, dtype=torch.float32).to(device),
+        smiles_list)
 
 
 # Solubility
 def descriptor_selection_solubility(samples):
     self_feats = np.empty((len(samples), 30), dtype=np.float32)
+    smiles_list=[]
 
     for i in range(0, len(samples)):
         mol_graph = samples[i][0]
@@ -256,7 +277,13 @@ def descriptor_selection_solubility(samples):
         self_feats[i, 28] = mol_graph.NHOHCount
         self_feats[i, 29] = mol_graph.SlogP_VSA6
 
+        smiles_list.append(mol_graph.smiles)
+
     graphs, labels = map(list, zip(*samples))
     batched_graph = dgl.batch(graphs)
 
-    return batched_graph, torch.tensor(self_feats).to(device), torch.tensor(labels, dtype=torch.float32).to(device)
+    return (
+        batched_graph, 
+        torch.tensor(self_feats).to(device), 
+        torch.tensor(labels, dtype=torch.float32).to(device),
+        smiles_list)

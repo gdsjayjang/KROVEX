@@ -1,120 +1,71 @@
-import random
+import yaml
+
+from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 
-from utils import trainer
-from utils import mol_collate
+from utils.utils import SET_SEED, select_loss
+from configs.registry import get_dataset_spec, build_collate_fn, bs
 from utils.mol_props import dim_atomic_feat
+from utils import evaluation
+from configs.args import get_parser
 
-from model import KROVEX
-from configs.config import SET_SEED, BACKBONE, SPLIT, DATASET_NAME, DATASET_PATH, BATCH_SIZE, MAX_EPOCHS, K, SEED
+def parse_args():
+    parser = get_parser()
+    p, _ = parser.parse_known_args()
+
+    if getattr(p, 'config', None):
+        with open(p.config, 'r') as f:
+            default_arg = yaml.safe_load(f)
+        
+        valid_keys = set(vars(p).keys())
+        
+        for k in default_arg.keys():
+            if k not in valid_keys:
+                raise ValueError(f'WRONG ARG in YAML: {k} (not defined in parser)')
+
+        parser.set_defaults(**default_arg)
+    
+    return parser.parse_args()
+    
 
 def main():
-    import utils.mol_conv as mc
-
-    SET_SEED()
-    global BATCH_SIZE
+    args = parse_args()
+    SET_SEED(args)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
 
-    if DATASET_NAME == 'freesolv':
-        print('DATASET_NAME: ', DATASET_NAME)
-        dataset = mc.read_dataset_freesolv(DATASET_PATH + '.csv')
-        num_descriptors = 50
-        descriptors = mol_collate.descriptor_selection_freesolv
+    # DATA LOAD
+    spec = get_dataset_spec(args.dataset)
+    ckpt_path = spec.ckpt_path # saved model
 
-    elif DATASET_NAME == 'esol':
-        print('DATASET_NAME: ', DATASET_NAME)
-        dataset = mc.read_dataset_esol(DATASET_PATH + '.csv')
-        num_descriptors = 63
-        descriptors = mol_collate.descriptor_selection_esol
+    dataset = spec.reader(args.dataset_path + args.dataset + '.csv')
+    train_dataset, test_dataset = train_test_split(dataset, test_size = 0.2, random_state = args.seed)
 
-    elif DATASET_NAME == 'scgas':
-        print('DATASET_NAME: ', DATASET_NAME)
-        BATCH_SIZE = 128
-        dataset = mc.read_dataset_scgas(DATASET_PATH + '.csv')
-        num_descriptors = 23
-        descriptors = mol_collate.descriptor_selection_scgas
+    if not bs("--batch-size"):
+        if spec.default_batch_size is not None:
+            args.batch_size = spec.default_batch_size
 
-    elif DATASET_NAME == 'solubility':
-        print('DATASET_NAME: ', DATASET_NAME)
-        BATCH_SIZE = 256
-        dataset = mc.read_dataset_solubility(DATASET_PATH + '.csv')
-        num_descriptors = 30
-        descriptors = mol_collate.descriptor_selection_solubility
+    num_desc = spec.num_desc
+    collate_fn = build_collate_fn(args.dataset)
 
-    random.shuffle(dataset)
+    # DEFINE THE MODEL
+    from model import KROVEX
+    KROVEX = KROVEX.Net(dim_atomic_feat, 1, num_desc).to(device)
 
-    model_KROVEX = KROVEX.Net(dim_atomic_feat, 1, num_descriptors).to(device)
-
-    # loss function
-    criterion = nn.L1Loss(reduction='sum')
-    # criterion = nn.MSELoss(reduction='sum')
+    # LOSS FUNC
+    criterion = select_loss(args.loss)
 
     test_losses = dict()
+    print(f'{args.backbone}, {args.dataset}, {criterion}, BATCH_SIZE:{args.batch_size}, SEED:{args.seed}')
 
-    print('--------- kronecker-product with descriptor selection ---------')
-    test_losses['KROVEX'] = trainer.cross_validation(dataset, model_KROVEX, criterion, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, descriptors)
-    print('test loss (KROVEX): ' + str(test_losses['KROVEX']))
+    # KROVEX
+    test_losses['KROVEX'] = evaluation.evaluation(train_dataset, test_dataset, KROVEX, criterion, args.batch_size, args.epochs, collate_fn, args.dataset, args.phase, args.save_model, ckpt_path)
+    print(f'Test loss: ' + str(test_losses['KROVEX']))
 
-    print('test_losse:', test_losses)
-    print(f'{BACKBONE}, {SPLIT}-split, {DATASET_NAME}, {criterion}, BATCH_SIZE:{BATCH_SIZE}, SEED:{SEED}')
-
-
-def main_sf():
-    import utils.mol_conv_scaffold as mc
-    SET_SEED()
-    global BATCH_SIZE
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
-
-    if DATASET_NAME == 'freesolv':
-        print('DATASET_NAME: ', DATASET_NAME)
-        dataset, smiles_list = mc.read_dataset_freesolv(DATASET_PATH + '.csv')
-        num_descriptors = 50
-        descriptors = mol_collate.descriptor_selection_freesolv
-
-    elif DATASET_NAME == 'esol':
-        BATCH_SIZE = 33
-        print('DATASET_NAME: ', DATASET_NAME)
-        dataset, smiles_list  = mc.read_dataset_esol(DATASET_PATH + '.csv')
-        num_descriptors = 63
-        descriptors = mol_collate.descriptor_selection_esol
-
-    elif DATASET_NAME == 'scgas':
-        print('DATASET_NAME: ', DATASET_NAME)
-        BATCH_SIZE = 128
-        dataset, smiles_list  = mc.read_dataset_scgas(DATASET_PATH + '.csv')
-        num_descriptors = 23
-        descriptors = mol_collate.descriptor_selection_scgas
-
-    elif DATASET_NAME == 'solubility':
-        print('DATASET_NAME: ', DATASET_NAME)
-        BATCH_SIZE = 256
-        dataset, smiles_list  = mc.read_dataset_solubility(DATASET_PATH + '.csv')
-        num_descriptors = 30
-        descriptors = mol_collate.descriptor_selection_solubility
-
-    folds = mc.scaffold_kfold_split(smiles_list, K)
-
-    model_KROVEX = KROVEX.Net(dim_atomic_feat, 1, num_descriptors).to(device)
-
-    # loss function
-    criterion = nn.L1Loss(reduction='sum')
-    # criterion = nn.MSELoss(reduction='sum')
-
-    test_losses = dict()
-
-    print('--------- kronecker-product with descriptor selection ---------')
-    test_losses['KROVEX'] = trainer.cross_validation_sf(dataset, model_KROVEX, criterion, folds, K, BATCH_SIZE, MAX_EPOCHS, trainer.train_model, trainer.test_model, descriptors)
-    print('test loss (KROVEX): ' + str(test_losses['KROVEX']))
-
-    print('test_losse:', test_losses)
-    print(f'{BACKBONE}, {SPLIT}-split, {DATASET_NAME}, {criterion}, BATCH_SIZE:{BATCH_SIZE}, SEED:{SEED}')
+    print(f'{args.backbone}, {args.dataset}, {criterion}, BATCH_SIZE:{args.batch_size}, SEED:{args.seed}')
 
 
 if __name__ == '__main__':
-    if SPLIT == 'random': main()
-    elif SPLIT == 'scaffold': main_sf()
+    main()

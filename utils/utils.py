@@ -1,5 +1,24 @@
+import os
+import random
 import numpy as np
-import pandas as pd
+
+import torch
+import torch.nn as nn
+import dgl
+
+def SET_SEED(args):
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    dgl.random.seed(args.seed)
+
+    os.environ['PYTHONHASHSEED'] = str(args.seed)
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+    os.environ['R_HOME'] = args.r_home # for ISIS
+
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def FeatureNormalization(mol_graphs, feat_name):
     features = [getattr(g, feat_name) for g in mol_graphs]
@@ -48,6 +67,12 @@ def adj_mat_to_edges(adj_mat):
 def atoms_to_symbols(atoms):
     return [atom.GetSymbol() for atom in atoms]
 
-def weight_reset(m):
-    if hasattr(m, 'reset_parameters'):
-        m.reset_parameters()
+def select_loss(name: str):
+    name = name.lower()
+
+    if name == 'mse':
+        return nn.MSELoss()
+    elif name == 'mae':
+        return nn.L1Loss()
+    else:
+        raise ValueError(f'Unknown loss: {name}')

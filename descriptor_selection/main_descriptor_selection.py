@@ -1,13 +1,22 @@
 import numpy as np
 import pandas as pd
 import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from configs.config import SET_SEED, SEED, DATASET_PATH
-from utils import MolecularFeatureExtractor
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 
-SET_SEED()
+from utils.utils import SET_SEED
+from descriptor_selection.utils import MolecularFeatureExtractor
+from configs.args import get_parser
+from configs.registry import get_dataset_spec
 
-df = pd.read_csv(DATASET_PATH + '.csv')
+parser = get_parser()
+args = parser.parse_args()
+SET_SEED(args)
+
+spec = get_dataset_spec(args.dataset)
+dataset_path = spec.dataset_path
+
+df = pd.read_csv(dataset_path + '.csv')
 smiles_list = df['smiles'].tolist()
 target = df.iloc[:,-1]
 
@@ -15,7 +24,6 @@ print('Processing descriptor selection...')
 extractor = MolecularFeatureExtractor()
 df_all_features = extractor.extract_molecular_features(smiles_list)
 df_all_features['target'] = target
-
 
 num_all_features = df_all_features.shape[1] - 1 
 df_all_features[df_all_features.isna().any(axis = 1)]
@@ -49,7 +57,7 @@ from sklearn.model_selection import train_test_split
 X_ISIS = df_screening.drop(columns = ['target'])
 y_ISIS = df_screening['target']
 
-X_train, X_test, y_train, y_test = train_test_split(X_ISIS, y_ISIS, test_size = 0.2, random_state = SEED)
+X_train, X_test, y_train, y_test = train_test_split(X_ISIS, y_ISIS, test_size = 0.2, random_state = args.seed)
 
 print('Processing Elastic Net...')
 from sklearn.preprocessing import StandardScaler
@@ -67,7 +75,7 @@ param_grid = {
     'alpha': np.linspace(0.01, 1.0, 300),
     'l1_ratio': np.linspace(0.1, 0.9, 30)
 }
-kfold = KFold(n_splits = 5, shuffle = True, random_state = SEED)
+kfold = KFold(n_splits = 5, shuffle = True, random_state = args.seed)
 
 grid_search = GridSearchCV(
     estimator = en,
@@ -89,7 +97,6 @@ best_en = ElasticNet(
 best_en.fit(X_train_scaling, y_train)
 
 coefficients = best_en.coef_
-coefficients.size
 
 selected_features_elastic = list(X_train.loc[:, best_en.coef_ != 0].columns)
 

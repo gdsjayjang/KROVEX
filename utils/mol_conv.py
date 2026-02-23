@@ -209,8 +209,8 @@ def read_dataset_esol(file_name):
     return samples
 
 
-# Self-Curated Gas
-def read_dataset_scgas(file_name):
+# Vapor Pressure
+def read_dataset_vp(file_name):
     samples = []
     mol_graphs = []
     data_mat = np.array(pd.read_csv(file_name))
