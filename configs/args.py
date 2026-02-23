@@ -13,9 +13,8 @@ def get_parser():
     # override
     parser.add_argument('--seed', type=int, default=100)
     parser.add_argument('--dataset', type=str, default='freesolv')
-    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=None,)
-    parser.add_argument('--k', type=int, default=5)
 
     parser.add_argument('--backbone', type=str, default='GCN')
     parser.add_argument('--loss', type=str, default='mse', choices=['mse', 'mae'])

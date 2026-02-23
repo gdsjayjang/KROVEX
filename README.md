@@ -26,7 +26,13 @@
     `pip install -r requirements.txt`
 
 ## Run the main code
-- To run the main code: `python main.py`
+- To train and test the model:
+
+    `python main.py dataset freesolv --phase train`
+
+- To test the model using saved model (Note: You should first save the model using the parser **--save-model**):
+
+    `python main.py dataset freesolv --phase test`
 
 ## Use KROVEX on a new dataset
 - To implement a new dataset, you need to select descriptors through a `Descriptor Selection`. Check `descriptor_selection` folder.
